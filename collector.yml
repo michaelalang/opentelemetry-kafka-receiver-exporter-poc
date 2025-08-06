@@ -1,0 +1,89 @@
+receivers:
+  kafka:
+    encoding: raw    # << otlp default will cause protcol errors
+
+exporters:
+  debug:
+    verbosity: detailed
+    sampling_initial: 5
+    sampling_thereafter: 200
+
+  kafka/exporter/logs2: # << produce to topic otlp_logs2
+    topic: otlp_logs2
+    encoding: raw
+    brokers:
+      - 127.0.0.1:9092
+
+  kafka/exporter/logs3: # << produce to topic otlp_logs3
+    topic: otlp_logs3
+    encoding: raw
+    brokers:
+      - 127.0.0.1:9092
+
+  loki:
+    default_labels_enabled:
+      exporter: false
+      job: true
+    endpoint: https://loki.apps.example.com/loki/api/v1/push
+    tls:
+      insecure_skip_verify: true
+
+processors:
+  batch:
+
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 1000
+    spike_limit_percentage: 10
+
+  attributes/loki:
+    actions:
+      - action: insert
+        key: loki.attribute.labels
+        value: service_name, service_namespace, application, hostname, host, level, facility, connection_hostname, trace_id, span_id, trace_flags
+      - action: insert
+        key: loki.format
+        value: raw
+
+  transform/kafka:
+    log_statements:
+      - context: log
+        statements:
+          - set(body, Decode(body, "utf8"))
+
+  transform/kafka/json:
+    log_statements:
+      - context: log
+        statements:
+          - merge_maps(attributes, ParseJSON(Decode(body, "utf8")), "upsert")
+          - flatten(cache)
+          - merge_maps(attributes, cache, "upsert")
+          - set(body, ParseJSON(Decode(body, "utf8")))
+
+service:
+  telemetry:
+    logs:
+      level: "debug"
+  pipelines:
+    logs/kafka/simple:
+      receivers: 
+        - kafka
+      processors: 
+        - memory_limiter
+        - transform/kafka
+        - batch
+      exporters: 
+        - debug
+    #logs/kafka/json:
+    #  receivers:
+    #    - kafka
+    #  processors: 
+    #    - memory_limiter
+    #    - transform/kafka/json
+    #    - attributes/loki
+    #    - batch
+    #  exporters: 
+    #    - debug
+    #    - kafka/exporter/logs2
+    #    - kafka/exporter/logs3
+    #    << add loki if you have an instance
