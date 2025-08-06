@@ -1,4 +1,4 @@
-#!/usr/bin/python3.11
+#!/usr/bin/python
 
 from faker import Faker
 import json, time, os

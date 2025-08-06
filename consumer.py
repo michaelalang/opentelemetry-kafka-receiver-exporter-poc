@@ -1,4 +1,4 @@
-#!/usr/bin/python3.11
+#!/usr/bin/python
 
 from kafka import KafkaConsumer
 import sys
