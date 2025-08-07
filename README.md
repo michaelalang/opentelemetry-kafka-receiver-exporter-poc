@@ -149,7 +149,7 @@ service:
 ```
 podman run --rm --replace -d --net=host --name otel \
   -v $(pwd)/collector.yml:/config/collector.yml \
-  docker.io/otel/opentelemetry-collector-contrib:latest \
+  ${IMAGE} \
   --config=/config/collector.yml
 ```
 
