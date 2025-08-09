@@ -1,3 +1,5 @@
+![Kakfa and OpenTelemetry](Kafka-to-OTEL.jpg)
+
 # OpenTelemetry Colletor with Kafka receivers and exporters
 
 This small POC is for show-casing how Kafka can be integrated with OpenTelemetry collector in both ways:
